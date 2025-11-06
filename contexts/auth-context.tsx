@@ -23,6 +23,7 @@ interface AuthContextType {
   isAdmin: boolean
   isExpired: boolean
   daysRemaining: number
+  error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const supabase = createBrowserClient()
 
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("[v0] Error checking session:", error)
+        setError("Fehler beim Laden der Session")
         setUser(null)
       } finally {
         setIsLoading(false)
@@ -77,18 +80,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string) => {
     try {
       console.log("[v0] Loading user profile for:", userId)
+      console.log("[v0] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+
       const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
+        console.error("[v0] Error details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        })
+
+        if (error.code === "PGRST116") {
+          setError("Benutzerprofil nicht gefunden. Bitte führe das SQL-Script aus.")
+        } else if (error.message.includes('relation "public.users" does not exist')) {
+          setError("Datenbank-Tabelle 'users' existiert nicht. Bitte führe das SQL-Script aus.")
+        } else {
+          setError(`Fehler beim Laden des Profils: ${error.message}`)
+        }
         setUser(null)
         return
       }
 
-      console.log("[v0] User profile loaded:", profile)
+      if (!profile) {
+        console.error("[v0] No profile found for user:", userId)
+        setError("Benutzerprofil nicht gefunden. Bitte führe das SQL-Script aus.")
+        setUser(null)
+        return
+      }
+
+      console.log("[v0] User profile loaded successfully:", profile)
+      setError(null)
       setUser(profile)
     } catch (error) {
-      console.error("[v0] Error loading user profile:", error)
+      console.error("[v0] Unexpected error loading user profile:", error)
+      setError("Unerwarteter Fehler beim Laden des Profils")
       setUser(null)
     }
   }
@@ -100,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut()
     setUser(null)
+    setError(null)
   }
 
   const isAdmin = user?.is_admin || false
@@ -109,11 +138,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const daysRemaining = user
     ? user.access_expires_at
       ? Math.max(0, Math.ceil((new Date(user.access_expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      : -1 // -1 = unbegrenzter Zugriff für Admin
+      : -1
     : 0
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, isAdmin, isExpired, daysRemaining }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, isAdmin, isExpired, daysRemaining, error }}>
       {children}
     </AuthContext.Provider>
   )
