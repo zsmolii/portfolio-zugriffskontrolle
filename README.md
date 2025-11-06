@@ -4,8 +4,6 @@ Ein geschütztes Portfolio-System mit Einladungslinks, Zeitbegrenzung und Admin-
 
 ## 🚀 Setup
 
-**📖 Folge der Anleitung in `SERVER_SETUP.md`**
-
 Diese Datei enthält eine komplette Schritt-für-Schritt-Anleitung für:
 - ✅ Supabase komplett neu einrichten
 - ✅ Code auf GitHub hochladen (nur nötige Dateien)
@@ -52,15 +50,4 @@ Diese Datei enthält eine komplette Schritt-für-Schritt-Anleitung für:
 - **Server**: PM2 + Nginx (auf deinem Ubuntu Server)
 - **Versionskontrolle**: GitHub
 
-## 📧 Admin-Login
 
-**E-Mail**: zsmolii@icloud.com  
-**Passwort**: Admin (bitte nach erstem Login ändern!)
-
-## 📧 Kontakt
-
-Bei Fragen: zsmolii@icloud.com
-
----
-
-**Wichtig**: Die `.gitignore` Datei stellt sicher, dass keine sensiblen Daten (wie `.env.local`) auf GitHub hochgeladen werden!
