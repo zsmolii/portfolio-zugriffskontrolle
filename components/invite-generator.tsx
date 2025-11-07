@@ -45,18 +45,23 @@ export function InviteGenerator() {
       // Generate a unique token
       const token = `invite-${Date.now()}-${Math.random().toString(36).substr(2, 16)}`
 
+      console.log("[v0] Token generated:", token)
+
       const { data, error } = await supabase
         .from("invites")
         .insert({
           token,
           is_used: false,
+          used_at: null,
+          used_by_user_id: null,
         })
         .select()
         .single()
 
       if (error) {
         console.error("[v0] Error inserting invite:", error)
-        throw error
+        alert(`Fehler beim Erstellen des Einladungslinks: ${error.message}`)
+        return
       }
 
       console.log("[v0] Invite created successfully:", data)
@@ -72,15 +77,15 @@ export function InviteGenerator() {
         setInvites(allInvites || [])
       }
 
-      // Auto-copy the new invite link
       if (data) {
         const inviteUrl = `${window.location.origin}/register?token=${data.token}`
         navigator.clipboard.writeText(inviteUrl)
         setCopiedToken(data.token)
         setTimeout(() => setCopiedToken(null), 2000)
+        alert(`Einladungslink erfolgreich erstellt und in die Zwischenablage kopiert!`)
       }
     } catch (error) {
-      console.error("Error generating invite:", error)
+      console.error("[v0] Error generating invite:", error)
       alert("Fehler beim Erstellen des Einladungslinks. Bitte versuchen Sie es erneut.")
     }
   }
@@ -132,9 +137,9 @@ export function InviteGenerator() {
                       readOnly
                       className="text-xs font-mono"
                     />
-                    {invite.is_used && (
+                    {invite.is_used && invite.used_at && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Verwendet am {new Date(invite.used_at || "").toLocaleDateString("de-DE")}
+                        Verwendet am {new Date(invite.used_at).toLocaleDateString("de-DE")}
                       </p>
                     )}
                   </div>
