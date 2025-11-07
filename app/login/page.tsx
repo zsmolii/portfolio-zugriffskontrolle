@@ -40,7 +40,7 @@ export default function LoginPage() {
           email,
           password,
         }),
-        10000,
+        30000,
       )
 
       if (signInError) {
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
       const profilePromise = supabase.from("users").select("*").eq("id", data.user.id).single()
 
-      const { data: profile, error: profileError } = await withTimeout(profilePromise, 8000)
+      const { data: profile, error: profileError } = await withTimeout(profilePromise, 25000)
 
       if (profileError) {
         console.error("[v0] Profile error:", profileError)
@@ -125,7 +125,7 @@ export default function LoginPage() {
       console.error("[v0] Unexpected error:", err)
       if (err instanceof Error && err.message.includes("Timeout")) {
         setError(
-          "Zeitüberschreitung: Die Verbindung zu Supabase dauert zu lange. Bitte prüfe deine Internet-Verbindung und die Supabase-URL in den Umgebungsvariablen.",
+          `Zeitüberschreitung: Die Verbindung zu Supabase dauert zu lange. Bitte prüfe:\n1. Ist deine Supabase-URL korrekt? (${process.env.NEXT_PUBLIC_SUPABASE_URL})\n2. Funktioniert deine Internetverbindung?\n3. Ist Supabase erreichbar?`,
         )
       } else {
         setError(
