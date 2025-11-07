@@ -12,8 +12,9 @@ interface InviteToken {
   token: string
   created_at: string
   used_at: string | null
-  used_by_user_id: string | null
+  used_by: string | null
   is_used: boolean
+  expires_at: string
 }
 
 export function InviteGenerator() {
@@ -45,6 +46,9 @@ export function InviteGenerator() {
       // Generate a unique token
       const token = `invite-${Date.now()}-${Math.random().toString(36).substr(2, 16)}`
 
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
       console.log("[v0] Token generated:", token)
 
       const { data, error } = await supabase
@@ -53,7 +57,10 @@ export function InviteGenerator() {
           token,
           is_used: false,
           used_at: null,
-          used_by_user_id: null,
+          used_by: null,
+          expires_at: expiresAt.toISOString(),
+          max_uses: 1,
+          current_uses: 0,
         })
         .select()
         .single()
