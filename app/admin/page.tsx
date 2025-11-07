@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
 
         if (invitesError) throw invitesError
 
-        const usedInvites = invites?.filter((i) => i.is_used) || []
+        const usedInvites = invites?.filter((i) => i.used_at !== null) || []
 
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
         const { data: logs, error: logsError } = await supabase
