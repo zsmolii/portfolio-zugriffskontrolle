@@ -12,7 +12,7 @@ import { createBrowserClient } from "@supabase/ssr"
 
 interface ActivityLog {
   id: string
-  timestamp: string
+  created_at: string
   type: "login" | "registration" | "invite_created" | "invite_used" | "extension_requested" | "extension_reviewed"
   user_id?: string
   details: string
@@ -42,7 +42,7 @@ export default function LogsPage() {
         const { data, error } = await supabase
           .from("activity_logs")
           .select("*")
-          .order("timestamp", { ascending: false })
+          .order("created_at", { ascending: false })
 
         if (error) throw error
 
@@ -125,7 +125,7 @@ export default function LogsPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm">{log.details}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(log.timestamp).toLocaleString("de-DE")}
+                          {new Date(log.created_at).toLocaleString("de-DE")}
                         </p>
                       </div>
                     </div>
