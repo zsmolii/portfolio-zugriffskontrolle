@@ -37,18 +37,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkSession = async () => {
+      const timeoutId = setTimeout(() => {
+        console.error("[v0] Session check timeout")
+        setUser(null)
+        setIsLoading(false)
+      }, 10000) // 10 seconds timeout
+
       try {
+        console.log("[v0] Checking session...")
         const {
           data: { session },
         } = await supabase.auth.getSession()
 
+        clearTimeout(timeoutId)
+
         if (session?.user) {
+          console.log("[v0] Session found, loading profile...")
           await loadUserProfile(session.user.id)
         } else {
+          console.log("[v0] No session found")
           setUser(null)
           setIsLoading(false)
         }
       } catch (error) {
+        clearTimeout(timeoutId)
         console.error("[v0] Error checking session:", error)
         setError(null)
         setUser(null)
@@ -61,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[v0] Auth state changed:", event)
       if (session?.user) {
         await loadUserProfile(session.user.id)
       } else {
@@ -75,8 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loadUserProfile = async (userId: string) => {
+    const timeoutId = setTimeout(() => {
+      console.error("[v0] Profile load timeout")
+      setUser(null)
+      setIsLoading(false)
+    }, 8000) // 8 seconds timeout
+
     try {
+      console.log("[v0] Loading user profile for:", userId)
       const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
+
+      clearTimeout(timeoutId)
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
@@ -87,16 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!profile) {
+        console.error("[v0] Profile not found")
         setError("Benutzerprofil nicht gefunden.")
         setUser(null)
         setIsLoading(false)
         return
       }
 
+      console.log("[v0] User profile loaded successfully")
       setError(null)
       setUser(profile)
       setIsLoading(false)
     } catch (error) {
+      clearTimeout(timeoutId)
       console.error("[v0] Unexpected error loading user profile:", error)
       setError(null)
       setUser(null)
