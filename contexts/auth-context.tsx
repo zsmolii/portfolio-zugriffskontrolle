@@ -39,9 +39,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       const timeoutId = setTimeout(() => {
         console.error("[v0] Session check timeout")
+        setError("Verbindung zur Datenbank konnte nicht hergestellt werden.")
         setUser(null)
         setIsLoading(false)
-      }, 10000) // 10 seconds timeout
+      }, 15000) // 15 seconds timeout
 
       try {
         console.log("[v0] Checking session...")
@@ -90,13 +91,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string) => {
     const timeoutId = setTimeout(() => {
       console.error("[v0] Profile load timeout")
+      setError("Benutzerprofil konnte nicht geladen werden. Bitte versuchen Sie es erneut.")
       setUser(null)
       setIsLoading(false)
-    }, 8000) // 8 seconds timeout
+    }, 12000) // 12 seconds timeout
 
     try {
       console.log("[v0] Loading user profile for:", userId)
-      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
+      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).maybeSingle()
 
       clearTimeout(timeoutId)
 
