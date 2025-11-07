@@ -38,18 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log("[v0] Checking session...")
-
         const sessionPromise = supabase.auth.getSession()
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Session check timeout")), 10000),
+          setTimeout(() => reject(new Error("Session check timeout")), 5000),
         )
 
         const {
           data: { session },
         } = (await Promise.race([sessionPromise, timeoutPromise])) as any
-
-        console.log("[v0] Session:", session ? "exists" : "none")
 
         if (session?.user) {
           await loadUserProfile(session.user.id)
@@ -70,7 +66,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[v0] Auth state changed:", event)
       if (session?.user) {
         await loadUserProfile(session.user.id)
       } else {
@@ -86,42 +81,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log("[v0] Loading user profile for:", userId)
-
       const profilePromise = supabase.from("users").select("*").eq("id", userId).single()
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile load timeout")), 8000),
+        setTimeout(() => reject(new Error("Profile load timeout")), 5000),
       )
 
       const { data: profile, error } = (await Promise.race([profilePromise, timeoutPromise])) as any
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
-
-        if (error.code === "PGRST116") {
-          setError("Benutzerprofil nicht gefunden.")
-        } else if (error.code === "42P17") {
-          setError("RLS-Policy-Fehler: Infinite recursion.")
-        } else if (error.message?.includes("timeout")) {
-          console.error("[v0] Profile load timeout - continuing anyway")
-          setError("Timeout beim Laden des Profils")
-        } else {
-          setError(`Fehler beim Laden des Profils: ${error.message}`)
-        }
+        setError(`Fehler beim Laden des Profils: ${error.message}`)
         setUser(null)
         setIsLoading(false)
         return
       }
 
       if (!profile) {
-        console.error("[v0] No profile found for user:", userId)
         setError("Benutzerprofil nicht gefunden.")
         setUser(null)
         setIsLoading(false)
         return
       }
 
-      console.log("[v0] User profile loaded successfully")
       setError(null)
       setUser(profile)
       setIsLoading(false)
