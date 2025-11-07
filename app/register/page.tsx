@@ -57,7 +57,7 @@ export default function RegisterPage() {
           return
         }
 
-        if (invite.is_used || invite.used_at) {
+        if (invite.used_at) {
           setError("Dieser Einladungstoken wurde bereits verwendet")
           return
         }
@@ -121,6 +121,9 @@ export default function RegisterPage() {
 
       console.log("[v0] User created:", authData.user.id)
 
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 30)
+
       const { error: profileError } = await supabase.from("users").insert({
         id: authData.user.id,
         company_name: companyName,
@@ -128,10 +131,17 @@ export default function RegisterPage() {
         email: email,
         is_active: true,
         is_admin: false,
+        access_expires_at: expiresAt.toISOString(),
       })
 
       if (profileError) {
         console.error("[v0] Profile error:", profileError)
+        console.error("[v0] Profile error details:", {
+          code: profileError.code,
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint,
+        })
         setError(`Benutzerprofil konnte nicht erstellt werden: ${profileError.message} (Code: ${profileError.code})`)
         setIsLoading(false)
         return
