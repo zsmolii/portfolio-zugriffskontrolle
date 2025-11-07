@@ -36,9 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createBrowserClient()
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      console.log("[v0] Session check timeout - forcing loading to false")
+      setIsLoading(false)
+      setError("Zeitüberschreitung beim Laden der Session")
+    }, 10000) // 10 Sekunden Timeout
+
     const checkSession = async () => {
       try {
         console.log("[v0] Checking session...")
+        console.log("[v0] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL || "NOT SET")
+
         const {
           data: { session },
         } = await supabase.auth.getSession()
@@ -55,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError("Fehler beim Laden der Session")
         setUser(null)
       } finally {
+        clearTimeout(timeoutId)
         setIsLoading(false)
       }
     }
@@ -73,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => {
+      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])
@@ -80,9 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string) => {
     try {
       console.log("[v0] Loading user profile for:", userId)
-      console.log("[v0] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
 
-      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout beim Laden des Profils")), 8000),
+      )
+
+      const profilePromise = supabase.from("users").select("*").eq("id", userId).single()
+
+      const { data: profile, error } = (await Promise.race([profilePromise, timeoutPromise])) as any
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
@@ -95,10 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (error.code === "PGRST116") {
           setError("Benutzerprofil nicht gefunden. Bitte führe das SQL-Script aus.")
+        } else if (error.code === "42P17") {
+          setError("RLS-Policy-Fehler: Infinite recursion. Bitte führe FIX_RLS_RECURSION.sql aus.")
         } else if (error.message.includes('relation "public.users" does not exist')) {
           setError("Datenbank-Tabelle 'users' existiert nicht. Bitte führe das SQL-Script aus.")
+        } else if (error.message.includes("Timeout")) {
+          setError("Zeitüberschreitung beim Laden des Profils. Prüfe deine Internetverbindung.")
         } else {
-          setError(`Fehler beim Laden des Profils: ${error.message}`)
+          setError(`Fehler beim Laden des Profils: ${error.message} (Code: ${error.code || "unknown"})`)
         }
         setUser(null)
         return
@@ -116,7 +135,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(profile)
     } catch (error) {
       console.error("[v0] Unexpected error loading user profile:", error)
-      setError("Unerwarteter Fehler beim Laden des Profils")
+      if (error instanceof Error && error.message.includes("Timeout")) {
+        setError("Zeitüberschreitung beim Laden des Profils")
+      } else {
+        setError("Unerwarteter Fehler beim Laden des Profils")
+      }
       setUser(null)
     }
   }
