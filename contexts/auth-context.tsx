@@ -36,16 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createBrowserClient()
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      console.log("[v0] Session check timeout - forcing loading to false")
-      setIsLoading(false)
-      setError("Zeitüberschreitung beim Laden der Session")
-    }, 10000) // 10 Sekunden Timeout
-
     const checkSession = async () => {
       try {
         console.log("[v0] Checking session...")
-        console.log("[v0] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL || "NOT SET")
 
         const {
           data: { session },
@@ -57,13 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await loadUserProfile(session.user.id)
         } else {
           setUser(null)
+          setIsLoading(false)
         }
       } catch (error) {
         console.error("[v0] Error checking session:", error)
         setError("Fehler beim Laden der Session")
         setUser(null)
-      } finally {
-        clearTimeout(timeoutId)
         setIsLoading(false)
       }
     }
@@ -78,11 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadUserProfile(session.user.id)
       } else {
         setUser(null)
+        setIsLoading(false)
       }
     })
 
     return () => {
-      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])
@@ -91,56 +83,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log("[v0] Loading user profile for:", userId)
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout beim Laden des Profils")), 8000),
-      )
-
-      const profilePromise = supabase.from("users").select("*").eq("id", userId).single()
-
-      const { data: profile, error } = (await Promise.race([profilePromise, timeoutPromise])) as any
+      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
-        console.error("[v0] Error details:", {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
-        })
 
         if (error.code === "PGRST116") {
-          setError("Benutzerprofil nicht gefunden. Bitte führe das SQL-Script aus.")
+          setError("Benutzerprofil nicht gefunden.")
         } else if (error.code === "42P17") {
-          setError("RLS-Policy-Fehler: Infinite recursion. Bitte führe FIX_RLS_RECURSION.sql aus.")
-        } else if (error.message.includes('relation "public.users" does not exist')) {
-          setError("Datenbank-Tabelle 'users' existiert nicht. Bitte führe das SQL-Script aus.")
-        } else if (error.message.includes("Timeout")) {
-          setError("Zeitüberschreitung beim Laden des Profils. Prüfe deine Internetverbindung.")
+          setError("RLS-Policy-Fehler: Infinite recursion.")
         } else {
-          setError(`Fehler beim Laden des Profils: ${error.message} (Code: ${error.code || "unknown"})`)
+          setError(`Fehler beim Laden des Profils: ${error.message}`)
         }
         setUser(null)
+        setIsLoading(false)
         return
       }
 
       if (!profile) {
         console.error("[v0] No profile found for user:", userId)
-        setError("Benutzerprofil nicht gefunden. Bitte führe das SQL-Script aus.")
+        setError("Benutzerprofil nicht gefunden.")
         setUser(null)
+        setIsLoading(false)
         return
       }
 
-      console.log("[v0] User profile loaded successfully:", profile)
+      console.log("[v0] User profile loaded successfully")
       setError(null)
       setUser(profile)
+      setIsLoading(false)
     } catch (error) {
       console.error("[v0] Unexpected error loading user profile:", error)
-      if (error instanceof Error && error.message.includes("Timeout")) {
-        setError("Zeitüberschreitung beim Laden des Profils")
-      } else {
-        setError("Unerwarteter Fehler beim Laden des Profils")
-      }
+      setError("Unerwarteter Fehler beim Laden des Profils")
       setUser(null)
+      setIsLoading(false)
     }
   }
 
