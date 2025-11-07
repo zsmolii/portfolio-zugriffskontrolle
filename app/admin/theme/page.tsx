@@ -16,6 +16,15 @@ interface ThemeSettings {
   background_color: string
   background_image?: string
   font_family: string
+  text_color?: string
+  nav_color?: string
+  heading_color?: string
+  heading_size?: string
+  heading_font?: string
+  body_text_font?: string
+  body_text_color?: string
+  body_text_size?: string
+  button_color?: string
 }
 
 export default function ThemeSettingsPage() {
@@ -25,6 +34,15 @@ export default function ThemeSettingsPage() {
     background_color: "#0a0a0a",
     background_image: "",
     font_family: "Inter",
+    text_color: "#ffffff",
+    nav_color: "#1a1a1a",
+    heading_color: "#ffffff",
+    heading_size: "2rem",
+    heading_font: "Inter",
+    body_text_font: "Inter",
+    body_text_color: "#e5e5e5",
+    body_text_size: "1rem",
+    button_color: "#3b82f6",
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState("")
@@ -62,16 +80,64 @@ export default function ThemeSettingsPage() {
     setMessage("")
 
     try {
-      const { error } = await supabase
+      console.log("[v0] Saving theme settings:", theme)
+
+      const { data: existing, error: fetchError } = await supabase
         .from("theme_settings")
-        .upsert({
-          id: 1,
-          ...theme,
-        })
-        .select()
+        .select("id")
+        .limit(1)
+        .maybeSingle()
 
-      if (error) throw error
+      if (fetchError) {
+        console.error("[v0] Error checking existing theme:", fetchError)
+      }
 
+      let result
+      if (existing) {
+        result = await supabase
+          .from("theme_settings")
+          .update({
+            background_color: theme.background_color,
+            background_image: theme.background_image || null,
+            font_family: theme.font_family,
+            text_color: theme.text_color || "#ffffff",
+            nav_color: theme.nav_color || "#1a1a1a",
+            heading_color: theme.heading_color || "#ffffff",
+            heading_size: theme.heading_size || "2rem",
+            heading_font: theme.heading_font || "Inter",
+            body_text_font: theme.body_text_font || "Inter",
+            body_text_color: theme.body_text_color || "#e5e5e5",
+            body_text_size: theme.body_text_size || "1rem",
+            button_color: theme.button_color || "#3b82f6",
+          })
+          .eq("id", existing.id)
+          .select()
+      } else {
+        result = await supabase
+          .from("theme_settings")
+          .insert({
+            background_color: theme.background_color,
+            background_image: theme.background_image || null,
+            font_family: theme.font_family,
+            text_color: theme.text_color || "#ffffff",
+            nav_color: theme.nav_color || "#1a1a1a",
+            heading_color: theme.heading_color || "#ffffff",
+            heading_size: theme.heading_size || "2rem",
+            heading_font: theme.heading_font || "Inter",
+            body_text_font: theme.body_text_font || "Inter",
+            body_text_color: theme.body_text_color || "#e5e5e5",
+            body_text_size: theme.body_text_size || "1rem",
+            button_color: theme.button_color || "#3b82f6",
+          })
+          .select()
+      }
+
+      if (result.error) {
+        console.error("[v0] Error saving theme:", result.error)
+        throw result.error
+      }
+
+      console.log("[v0] Theme saved successfully:", result.data)
       setMessage("Theme-Einstellungen erfolgreich gespeichert!")
       setTimeout(() => setMessage(""), 3000)
     } catch (error) {
@@ -169,6 +235,128 @@ export default function ThemeSettingsPage() {
                 <p className="text-xs text-muted-foreground">Wählen Sie eine Schriftart für Ihr Portfolio</p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="text_color">Textfarbe</Label>
+                <Input
+                  id="text_color"
+                  type="color"
+                  value={theme.text_color}
+                  onChange={(e) => setTheme({ ...theme, text_color: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Textfarbe für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nav_color">Navigationsfarbe</Label>
+                <Input
+                  id="nav_color"
+                  type="color"
+                  value={theme.nav_color}
+                  onChange={(e) => setTheme({ ...theme, nav_color: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Navigationsfarbe für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="heading_color">Überschriftfarbe</Label>
+                <Input
+                  id="heading_color"
+                  type="color"
+                  value={theme.heading_color}
+                  onChange={(e) => setTheme({ ...theme, heading_color: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Überschriftfarbe für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="heading_size">Überschriftgröße</Label>
+                <Input
+                  id="heading_size"
+                  value={theme.heading_size}
+                  onChange={(e) => setTheme({ ...theme, heading_size: e.target.value })}
+                  placeholder="2rem"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Überschriftgröße für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="heading_font">Überschriftschriftart</Label>
+                <select
+                  id="heading_font"
+                  className="w-full px-3 py-2 border rounded-md bg-background"
+                  value={theme.heading_font}
+                  onChange={(e) => setTheme({ ...theme, heading_font: e.target.value })}
+                >
+                  <option value="Inter">Inter (Standard)</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Merriweather">Merriweather (Serif)</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Überschriftschriftart für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="body_text_font">Körperschriftart</Label>
+                <select
+                  id="body_text_font"
+                  className="w-full px-3 py-2 border rounded-md bg-background"
+                  value={theme.body_text_font}
+                  onChange={(e) => setTheme({ ...theme, body_text_font: e.target.value })}
+                >
+                  <option value="Inter">Inter (Standard)</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Merriweather">Merriweather (Serif)</option>
+                  <option value="Georgia">Georgia (Serif)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Körperschriftart für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="body_text_color">Körperschriftfarbe</Label>
+                <Input
+                  id="body_text_color"
+                  type="color"
+                  value={theme.body_text_color}
+                  onChange={(e) => setTheme({ ...theme, body_text_color: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Körperschriftfarbe für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="body_text_size">Körperschriftgröße</Label>
+                <Input
+                  id="body_text_size"
+                  value={theme.body_text_size}
+                  onChange={(e) => setTheme({ ...theme, body_text_size: e.target.value })}
+                  placeholder="1rem"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Körperschriftgröße für Ihr Portfolio</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="button_color">Buttonfarbe</Label>
+                <Input
+                  id="button_color"
+                  type="color"
+                  value={theme.button_color}
+                  onChange={(e) => setTheme({ ...theme, button_color: e.target.value })}
+                  className="w-20 h-10"
+                />
+                <p className="text-xs text-muted-foreground">Wählen Sie eine Buttonfarbe für Ihr Portfolio</p>
+              </div>
+
               <Button onClick={handleSaveTheme} disabled={saving} className="w-full">
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? "Wird gespeichert..." : "Theme-Einstellungen speichern"}
@@ -191,6 +379,14 @@ export default function ThemeSettingsPage() {
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   fontFamily: theme.font_family,
+                  color: theme.text_color,
+                  navColor: theme.nav_color,
+                  headingColor: theme.heading_color,
+                  headingSize: theme.heading_size,
+                  headingFont: theme.heading_font,
+                  bodyTextColor: theme.body_text_color,
+                  bodyTextSize: theme.body_text_size,
+                  buttonColor: theme.button_color,
                 }}
               >
                 <h2 className="text-2xl font-bold text-white mb-4">Beispiel-Überschrift</h2>
