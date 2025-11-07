@@ -147,7 +147,8 @@ export default function RegisterPage() {
 
       if (profileError) {
         console.error("[v0] Profile error:", profileError)
-        setError("Benutzerprofil konnte nicht erstellt werden")
+        console.error("[v0] Profile error details:", JSON.stringify(profileError, null, 2))
+        setError(`Benutzerprofil konnte nicht erstellt werden: ${profileError.message} (Code: ${profileError.code})`)
         setIsLoading(false)
         return
       }
