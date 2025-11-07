@@ -2,9 +2,10 @@
 
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { LogOut, Calendar, AlertCircle, Crown } from "lucide-react"
+import { LogOut, Calendar, AlertCircle, Crown, Menu } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 export function PortfolioHeader() {
   const { user, logout, daysRemaining, isExpired, isAdmin } = useAuth()
@@ -15,6 +16,13 @@ export function PortfolioHeader() {
     router.push("/login")
   }
 
+  const navLinks = [
+    { href: "#about", label: "Über mich" },
+    { href: "#projects", label: "Projekte" },
+    { href: "#skills", label: "Fähigkeiten" },
+    { href: "#contact", label: "Kontakt" },
+  ]
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -22,20 +30,43 @@ export function PortfolioHeader() {
           <Link href="/portfolio" className="font-semibold text-lg">
             Portfolio
           </Link>
+
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">
-              Über mich
-            </a>
-            <a href="#projects" className="text-muted-foreground hover:text-foreground transition-colors">
-              Projekte
-            </a>
-            <a href="#skills" className="text-muted-foreground hover:text-foreground transition-colors">
-              Fähigkeiten
-            </a>
-            <a href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">
-              Kontakt
-            </a>
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Menü öffnen</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px]">
+              <SheetHeader>
+                <SheetTitle>Navigation</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 mt-6">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="text-foreground hover:text-primary transition-colors font-medium"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <div className="flex items-center gap-4">
