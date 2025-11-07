@@ -2,9 +2,10 @@
 
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 export function AdminHeader() {
   const { user, logout } = useAuth()
@@ -14,6 +15,17 @@ export function AdminHeader() {
     logout()
     router.push("/login")
   }
+
+  const navLinks = [
+    { href: "/admin", label: "Übersicht" },
+    { href: "/admin/companies", label: "Firmen" },
+    { href: "/admin/extensions", label: "Verlängerungen" },
+    { href: "/admin/invites", label: "Einladungen" },
+    { href: "/admin/content", label: "Inhalte" },
+    { href: "/admin/theme", label: "Theme" },
+    { href: "/admin/logs", label: "Aktivitäten" },
+    { href: "/admin/settings", label: "Einstellungen" },
+  ]
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -25,32 +37,43 @@ export function AdminHeader() {
           >
             Admin Dashboard
           </Link>
+
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
-              Übersicht
-            </Link>
-            <Link href="/admin/companies" className="text-muted-foreground hover:text-foreground transition-colors">
-              Firmen
-            </Link>
-            <Link href="/admin/extensions" className="text-muted-foreground hover:text-foreground transition-colors">
-              Verlängerungen
-            </Link>
-            <Link href="/admin/invites" className="text-muted-foreground hover:text-foreground transition-colors">
-              Einladungen
-            </Link>
-            <Link href="/admin/content" className="text-muted-foreground hover:text-foreground transition-colors">
-              Inhalte
-            </Link>
-            <Link href="/admin/theme" className="text-muted-foreground hover:text-foreground transition-colors">
-              Theme
-            </Link>
-            <Link href="/admin/logs" className="text-muted-foreground hover:text-foreground transition-colors">
-              Aktivitäten
-            </Link>
-            <Link href="/admin/settings" className="text-muted-foreground hover:text-foreground transition-colors">
-              Einstellungen
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Menü öffnen</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px]">
+              <SheetHeader>
+                <SheetTitle>Navigation</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4 mt-6">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-foreground hover:text-primary transition-colors font-medium"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <div className="flex items-center gap-4">
