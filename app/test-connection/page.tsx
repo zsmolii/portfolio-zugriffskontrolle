@@ -99,7 +99,7 @@ export default function TestConnectionPage() {
           <div className="text-sm text-muted-foreground space-y-2">
             <p className="font-semibold">Erwartete Umgebungsvariablen:</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>NEXT_PUBLIC_SUPABASE_URL: https://vvduuupzbayobvrzotmx.supabase.co</li>
+              <li>NEXT_PUBLIC_SUPABASE_URL: https://bobduitebgjykgjxcwzl.supabase.co</li>
               <li>NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGci...</li>
             </ul>
           </div>
