@@ -31,6 +31,8 @@ export default function RegisterPage() {
       }
 
       try {
+        console.log("[v0] Validating token:", token)
+
         const supabase = createClient()
 
         const { data: invite, error: inviteError } = await supabase
@@ -39,18 +41,30 @@ export default function RegisterPage() {
           .eq("token", token)
           .single()
 
-        if (inviteError || !invite) {
-          setError("Ungültiger Einladungstoken")
+        console.log("[v0] Invite query result:", { invite, inviteError })
+
+        if (inviteError) {
+          console.error("[v0] Database error:", inviteError)
+          setError(`Ungültiger Einladungstoken (DB-Fehler: ${inviteError.message})`)
           return
         }
 
-        if (invite.is_used) {
+        if (!invite) {
+          console.error("[v0] Token not found in database")
+          setError("Ungültiger Einladungstoken (nicht gefunden)")
+          return
+        }
+
+        if (invite.is_used || invite.used_at) {
+          console.error("[v0] Token already used")
           setError("Dieser Einladungstoken wurde bereits verwendet")
           return
         }
 
+        console.log("[v0] Token is valid!")
         setInviteValid(true)
       } catch (err) {
+        console.error("[v0] Error validating token:", err)
         setError("Einladungstoken konnte nicht validiert werden")
       }
     }
@@ -82,6 +96,8 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
+      console.log("[v0] Starting registration...")
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -91,16 +107,20 @@ export default function RegisterPage() {
       })
 
       if (signUpError) {
+        console.error("[v0] Sign up error:", signUpError)
         setError(signUpError.message)
         setIsLoading(false)
         return
       }
 
       if (!authData.user) {
+        console.error("[v0] No user data returned")
         setError("Konto konnte nicht erstellt werden")
         setIsLoading(false)
         return
       }
+
+      console.log("[v0] User created:", authData.user.id)
 
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 30)
@@ -116,10 +136,13 @@ export default function RegisterPage() {
       })
 
       if (profileError) {
+        console.error("[v0] Profile error:", profileError)
         setError("Benutzerprofil konnte nicht erstellt werden")
         setIsLoading(false)
         return
       }
+
+      console.log("[v0] Profile created, marking invite as used...")
 
       const { error: updateError } = await supabase
         .from("invites")
@@ -131,12 +154,16 @@ export default function RegisterPage() {
         .eq("token", token)
 
       if (updateError) {
-        console.error("Einladung konnte nicht als verwendet markiert werden:", updateError)
+        console.error("[v0] Error marking invite as used:", updateError)
+      } else {
+        console.log("[v0] Invite marked as used")
       }
 
+      console.log("[v0] Registration successful! Redirecting...")
       router.push("/portfolio")
       router.refresh()
     } catch (err) {
+      console.error("[v0] Registration error:", err)
       setError("Ein Fehler ist bei der Registrierung aufgetreten")
       setIsLoading(false)
     }
