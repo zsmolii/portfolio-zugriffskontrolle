@@ -33,7 +33,8 @@ export async function updateSession(request: NextRequest) {
 
   console.log("[v0 MIDDLEWARE] Path:", request.nextUrl.pathname, "User:", user?.id || "none")
 
-  // Protect routes that require authentication
+  // Nur noch: Wenn kein User und geschützte Route → redirect zu /login
+  // Alle anderen Fälle werden vom Auth-Context und ProtectedRoute gehandhabt
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
@@ -48,12 +49,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/")) {
-    console.log("[v0 MIDDLEWARE] User logged in, redirecting from login page")
-    const url = request.nextUrl.clone()
-    url.pathname = "/portfolio" // Standardmäßig zu Portfolio, Admin-Check erfolgt im Auth-Context
-    return NextResponse.redirect(url)
-  }
+  // Dies verursachte die Redirect-Schleife, weil die Login-Seite zu /admin
+  // redirecten wollte, aber die Middleware ihn zu /portfolio umgeleitet hat
 
   return supabaseResponse
 }
