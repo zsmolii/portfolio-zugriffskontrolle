@@ -31,9 +31,19 @@ export default function RegisterPage() {
       }
 
       try {
-        console.log("[v0] Validating token:", token)
+        console.log("[v0] Checking session...")
 
         const supabase = createClient()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (session) {
+          console.log("[v0] User already logged in, logging out first...")
+          await supabase.auth.signOut()
+        }
+
+        console.log("[v0] Validating token:", token)
 
         const { data: invite, error: inviteError } = await supabase
           .from("invites")
