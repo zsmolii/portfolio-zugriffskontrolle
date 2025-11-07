@@ -89,6 +89,23 @@
   height: 14px;
 }
 
+/* Admin-Menüpunkt im Header stylen */
+.nav-item.admin-nav a {
+  background-color: #f90;
+  color: #1e1e1e;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.nav-item.admin-nav a:hover {
+  background-color: #ffaa33;
+}
+
+.nav-item.admin-nav a::after {
+  display: none;
+}
+
 /* Header */
 .header {
   background-color: #333333;
