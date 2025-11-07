@@ -91,13 +91,8 @@ export default function LoginPage() {
 
       addDebug(`Login successful! Redirecting to ${profile.is_admin ? "/admin" : "/portfolio"}`)
 
-      if (profile.is_admin) {
-        router.push("/admin")
-      } else {
-        router.push("/portfolio")
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const redirectUrl = profile.is_admin ? "/admin" : "/portfolio"
+      window.location.href = redirectUrl
     } catch (err) {
       addDebug(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`)
       setError(`Unerwarteter Fehler: ${err instanceof Error ? err.message : "Unbekannter Fehler"}`)
