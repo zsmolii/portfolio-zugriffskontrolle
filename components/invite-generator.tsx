@@ -13,6 +13,7 @@ interface InviteToken {
   created_at: string
   used_at: string | null
   used_by_user_id: string | null
+  is_used: boolean
 }
 
 export function InviteGenerator() {
@@ -39,24 +40,37 @@ export function InviteGenerator() {
 
   const handleGenerateInvite = async () => {
     try {
+      console.log("[v0] Generating new invite...")
+
       // Generate a unique token
       const token = `invite-${Date.now()}-${Math.random().toString(36).substr(2, 16)}`
 
-      // Insert new invite into Supabase
       const { data, error } = await supabase
         .from("invites")
         .insert({
           token,
-          created_at: new Date().toISOString(),
+          is_used: false,
         })
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Error inserting invite:", error)
+        throw error
+      }
 
-      // Refresh invites list
-      const { data: allInvites } = await supabase.from("invites").select("*")
-      setInvites(allInvites || [])
+      console.log("[v0] Invite created successfully:", data)
+
+      const { data: allInvites, error: fetchError } = await supabase
+        .from("invites")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (fetchError) {
+        console.error("[v0] Error fetching invites:", fetchError)
+      } else {
+        setInvites(allInvites || [])
+      }
 
       // Auto-copy the new invite link
       if (data) {
@@ -67,6 +81,7 @@ export function InviteGenerator() {
       }
     } catch (error) {
       console.error("Error generating invite:", error)
+      alert("Fehler beim Erstellen des Einladungslinks. Bitte versuchen Sie es erneut.")
     }
   }
 
@@ -101,12 +116,12 @@ export function InviteGenerator() {
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
-                          invite.used_at
+                          invite.is_used
                             ? "bg-green-500/10 text-green-600 dark:text-green-400"
                             : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                         }`}
                       >
-                        {invite.used_at ? "Verwendet" : "Verfügbar"}
+                        {invite.is_used ? "Verwendet" : "Verfügbar"}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         Erstellt: {new Date(invite.created_at).toLocaleDateString("de-DE")}
@@ -117,9 +132,9 @@ export function InviteGenerator() {
                       readOnly
                       className="text-xs font-mono"
                     />
-                    {invite.used_at && (
+                    {invite.is_used && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Verwendet am {new Date(invite.used_at).toLocaleDateString("de-DE")}
+                        Verwendet am {new Date(invite.used_at || "").toLocaleDateString("de-DE")}
                       </p>
                     )}
                   </div>
@@ -127,7 +142,7 @@ export function InviteGenerator() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleCopyInvite(invite.token)}
-                    disabled={!!invite.used_at}
+                    disabled={invite.is_used}
                   >
                     {copiedToken === invite.token ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
