@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
                     <Link href="/portfolio">Portfolio ansehen</Link>
                   </Button>
                   <Button className="w-full bg-transparent" variant="outline" asChild>
-                    <Link href="/admin/content">Inhalte bearbeiten</Link>
+                    <Link href="/admin/projects">Projekte verwalten</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -187,9 +187,9 @@ export default function AdminDashboardPage() {
                     Verlängerungsanträge prüfen
                   </Button>
                 </Link>
-                <Link href="/admin/settings">
+                <Link href="/admin/projects">
                   <Button className="w-full bg-transparent" variant="outline">
-                    Einstellungen
+                    Projekte verwalten
                   </Button>
                 </Link>
               </CardContent>
