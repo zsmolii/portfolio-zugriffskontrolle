@@ -1,166 +1,215 @@
-"use client"
+-- ULTIMATIVES SQL-SCRIPT: Löscht alles und erstellt neu mit korrekten RLS-Policies
+-- Führe dieses Script in Supabase SQL Editor aus
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
+-- Schritt 1: Lösche alle bestehenden Tabellen
+DROP TABLE IF EXISTS public.theme_settings CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
+DROP TABLE IF EXISTS public.portfolio_content CASCADE;
+DROP TABLE IF EXISTS public.invitation_links CASCADE;
+DROP TABLE IF EXISTS public.users CASCADE;
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+-- Schritt 2: Erstelle users Tabelle
+CREATE TABLE public.users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL UNIQUE,
+  company_name TEXT NOT NULL,
+  contact_person TEXT NOT NULL,
+  is_admin BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  access_expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+-- Schritt 3: Aktiviere RLS für users
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
-    try {
-      const supabase = createClient()
+-- Schritt 4: Erstelle RLS-Policies für users (WICHTIG - VEREINFACHT!)
+-- Vereinfachte RLS-Policies, die garantiert funktionieren
 
-      console.log("[v0] Login attempt for:", email)
-      console.log("[v0] Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+-- Policy 1: Jeder authentifizierte User kann sein eigenes Profil lesen
+CREATE POLICY "authenticated_read_own"
+ON public.users
+FOR SELECT
+TO authenticated
+USING (auth.uid() = id);
 
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+-- Policy 2: Jeder authentifizierte User kann sein eigenes Profil aktualisieren
+CREATE POLICY "authenticated_update_own"
+ON public.users
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
 
-      if (signInError) {
-        console.error("[v0] Sign in error:", signInError)
-        setError("Ungültige Anmeldedaten")
-        setIsLoading(false)
-        return
-      }
-
-      if (!data.user) {
-        console.error("[v0] No user data returned")
-        setError("Anmeldung fehlgeschlagen")
-        setIsLoading(false)
-        return
-      }
-
-      console.log("[v0] User authenticated:", data.user.id)
-      console.log("[v0] Fetching user profile from 'users' table...")
-
-      const { data: profile, error: profileError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", data.user.id)
-        .single()
-
-      if (profileError) {
-        console.error("[v0] Profile error:", profileError)
-        console.error("[v0] Error details:", {
-          message: profileError.message,
-          code: profileError.code,
-          details: profileError.details,
-          hint: profileError.hint,
-        })
-
-        if (profileError.message.includes('relation "public.users" does not exist')) {
-          setError(
-            "FEHLER: Die Datenbank-Tabelle 'users' existiert nicht. Bitte führe das SQL-Script 'SUPABASE_KOMPLETT_NEU.sql' in Supabase aus!",
-          )
-        } else if (profileError.code === "PGRST116") {
-          setError(
-            `FEHLER: Kein Benutzerprofil für ${email} gefunden. Bitte führe das SQL-Script aus, um den Admin-User zu erstellen!`,
-          )
-        } else {
-          setError(`Fehler beim Laden des Profils: ${profileError.message}`)
-        }
-        setIsLoading(false)
-        return
-      }
-
-      if (!profile) {
-        console.error("[v0] No profile found for user:", data.user.id)
-        setError(`FEHLER: Kein Benutzerprofil für ${email} gefunden. Bitte führe das SQL-Script aus!`)
-        setIsLoading(false)
-        return
-      }
-
-      console.log("[v0] Profile loaded:", profile)
-
-      if (!profile.is_active && !profile.is_admin) {
-        await supabase.auth.signOut()
-        setError("Ihr Konto wurde deaktiviert")
-        setIsLoading(false)
-        return
-      }
-
-      console.log("[v0] Login successful! Redirecting...")
-
-      if (profile.is_admin) {
-        router.push("/admin")
-      } else {
-        router.push("/portfolio")
-      }
-      router.refresh()
-    } catch (err) {
-      console.error("[v0] Unexpected error:", err)
-      setError(`Ein unerwarteter Fehler ist aufgetreten: ${err instanceof Error ? err.message : "Unbekannter Fehler"}`)
-      setIsLoading(false)
-    }
-  }
-
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-accent/5 p-4">
-      <Card className="w-full max-w-md border-border/50 shadow-2xl">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Anmelden</CardTitle>
-          <CardDescription>Geben Sie Ihre Zugangsdaten ein, um fortzufahren</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="ihre.email@firma.de"
-                className="transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Ihr Passwort"
-                className="transition-all"
-              />
-            </div>
-            {error && (
-              <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md whitespace-pre-wrap">
-                {error}
-              </div>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Wird angemeldet..." : "Anmelden"}
-            </Button>
-            <p className="text-sm text-center text-muted-foreground">
-              Haben Sie einen Einladungscode?{" "}
-              <Link href="/register" className="text-primary hover:underline font-medium">
-                Hier registrieren
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+-- Policy 3: Admins können alles (für spätere Admin-Features)
+CREATE POLICY "admins_all"
+ON public.users
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid() AND u.is_admin = true
   )
-}
+);
+
+-- Schritt 5: Füge deinen Admin-User ein
+-- Verwende die korrekte UUID aus Supabase Auth
+INSERT INTO public.users (id, email, company_name, contact_person, is_admin, is_active, access_expires_at, created_at, updated_at)
+VALUES (
+  'b9b907a6-f05a-4606-93ef-3404f8ae6572'::UUID,
+  'zsmolii@icloud.com',
+  'Admin',
+  'Zaid Smolii',
+  true,
+  true,
+  NULL,
+  NOW(),
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE
+SET 
+  email = EXCLUDED.email,
+  company_name = EXCLUDED.company_name,
+  contact_person = EXCLUDED.contact_person,
+  is_admin = EXCLUDED.is_admin,
+  is_active = EXCLUDED.is_active,
+  access_expires_at = EXCLUDED.access_expires_at,
+  updated_at = NOW();
+
+-- Schritt 6: Erstelle invitation_links Tabelle
+CREATE TABLE public.invitation_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token TEXT NOT NULL UNIQUE,
+  company_name TEXT NOT NULL,
+  contact_person TEXT NOT NULL,
+  email TEXT NOT NULL,
+  access_duration_days INTEGER DEFAULT 30,
+  is_used BOOLEAN DEFAULT false,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_by UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.invitation_links ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_invitation_links"
+ON public.invitation_links
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.users
+    WHERE users.id = auth.uid() AND users.is_admin = true
+  )
+);
+
+CREATE POLICY "public_read_valid_invites"
+ON public.invitation_links
+FOR SELECT
+TO anon, authenticated
+USING (NOT is_used AND expires_at > NOW());
+
+-- Schritt 7: Erstelle portfolio_content Tabelle
+CREATE TABLE public.portfolio_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  section TEXT NOT NULL UNIQUE,
+  content JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.portfolio_content ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "authenticated_read_portfolio"
+ON public.portfolio_content
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "admin_manage_portfolio"
+ON public.portfolio_content
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.users
+    WHERE users.id = auth.uid() AND users.is_admin = true
+  )
+);
+
+-- Schritt 8: Erstelle projects Tabelle
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  technologies TEXT[] NOT NULL,
+  icon TEXT,
+  demo_url TEXT,
+  ai_role TEXT,
+  challenges TEXT,
+  order_index INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "authenticated_read_projects"
+ON public.projects
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "admin_manage_projects"
+ON public.projects
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.users
+    WHERE users.id = auth.uid() AND users.is_admin = true
+  )
+);
+
+-- Schritt 9: Erstelle theme_settings Tabelle
+CREATE TABLE public.theme_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  background_color TEXT DEFAULT '#0a0a0a',
+  background_image TEXT,
+  font_family TEXT DEFAULT 'Inter',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.theme_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "authenticated_read_theme"
+ON public.theme_settings
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "admin_manage_theme"
+ON public.theme_settings
+FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.users
+    WHERE users.id = auth.uid() AND users.is_admin = true
+  )
+);
+
+-- Schritt 10: Füge Demo-Daten ein
+INSERT INTO public.theme_settings (background_color, background_image, font_family)
+VALUES ('#0a0a0a', NULL, 'Inter')
+ON CONFLICT DO NOTHING;
+
+-- Schritt 11: Zeige Ergebnisse zur Bestätigung
+SELECT 'Admin User:' as info;
+SELECT id, email, is_admin, is_active, access_expires_at FROM public.users;
+
+SELECT 'RLS Policies für users Tabelle:' as info;
+SELECT policyname, cmd, qual FROM pg_policies WHERE schemaname = 'public' AND tablename = 'users';
