@@ -31,27 +31,20 @@ export default function RegisterPage() {
       }
 
       try {
-        console.log("[v0] Checking session...")
-
         const supabase = createClient()
         const {
           data: { session },
         } = await supabase.auth.getSession()
 
         if (session) {
-          console.log("[v0] User already logged in, logging out first...")
           await supabase.auth.signOut()
         }
-
-        console.log("[v0] Validating token:", token)
 
         const { data: invite, error: inviteError } = await supabase
           .from("invites")
           .select("*")
           .eq("token", token)
-          .single()
-
-        console.log("[v0] Invite query result:", { invite, inviteError })
+          .maybeSingle()
 
         if (inviteError) {
           console.error("[v0] Database error:", inviteError)
@@ -60,18 +53,15 @@ export default function RegisterPage() {
         }
 
         if (!invite) {
-          console.error("[v0] Token not found in database")
           setError("Ungültiger Einladungstoken (nicht gefunden)")
           return
         }
 
         if (invite.is_used || invite.used_at) {
-          console.error("[v0] Token already used")
           setError("Dieser Einladungstoken wurde bereits verwendet")
           return
         }
 
-        console.log("[v0] Token is valid!")
         setInviteValid(true)
       } catch (err) {
         console.error("[v0] Error validating token:", err)
@@ -106,8 +96,6 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
-      console.log("[v0] Starting registration...")
-
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -117,20 +105,16 @@ export default function RegisterPage() {
       })
 
       if (signUpError) {
-        console.error("[v0] Sign up error:", signUpError)
         setError(signUpError.message)
         setIsLoading(false)
         return
       }
 
       if (!authData.user) {
-        console.error("[v0] No user data returned")
         setError("Konto konnte nicht erstellt werden")
         setIsLoading(false)
         return
       }
-
-      console.log("[v0] User created:", authData.user.id)
 
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 30)
@@ -151,8 +135,6 @@ export default function RegisterPage() {
         return
       }
 
-      console.log("[v0] Profile created, marking invite as used...")
-
       const { error: updateError } = await supabase
         .from("invites")
         .update({
@@ -164,11 +146,8 @@ export default function RegisterPage() {
 
       if (updateError) {
         console.error("[v0] Error marking invite as used:", updateError)
-      } else {
-        console.log("[v0] Invite marked as used")
       }
 
-      console.log("[v0] Registration successful! Redirecting...")
       router.push("/portfolio")
       router.refresh()
     } catch (err) {
