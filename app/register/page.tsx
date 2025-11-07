@@ -96,6 +96,8 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
 
+      console.log("[v0] Starting registration...")
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -105,6 +107,7 @@ export default function RegisterPage() {
       })
 
       if (signUpError) {
+        console.error("[v0] SignUp error:", signUpError)
         setError(signUpError.message)
         setIsLoading(false)
         return
@@ -116,37 +119,40 @@ export default function RegisterPage() {
         return
       }
 
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 30)
+      console.log("[v0] User created:", authData.user.id)
 
       const { error: profileError } = await supabase.from("users").insert({
         id: authData.user.id,
         company_name: companyName,
         contact_person: contactPerson,
         email: email,
-        access_expires_at: expiresAt.toISOString(),
         is_active: true,
         is_admin: false,
       })
 
       if (profileError) {
+        console.error("[v0] Profile error:", profileError)
         setError(`Benutzerprofil konnte nicht erstellt werden: ${profileError.message} (Code: ${profileError.code})`)
         setIsLoading(false)
         return
       }
 
+      console.log("[v0] Profile created successfully")
+
       const { error: updateError } = await supabase
         .from("invites")
         .update({
-          is_used: true,
           used_by: authData.user.id,
           used_at: new Date().toISOString(),
+          current_uses: 1,
         })
         .eq("token", token)
 
       if (updateError) {
         console.error("[v0] Error marking invite as used:", updateError)
       }
+
+      console.log("[v0] Registration complete, redirecting...")
 
       router.push("/portfolio")
       router.refresh()
