@@ -38,14 +38,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Session check timeout")), 5000),
-        )
-
         const {
           data: { session },
-        } = (await Promise.race([sessionPromise, timeoutPromise])) as any
+        } = await supabase.auth.getSession()
 
         if (session?.user) {
           await loadUserProfile(session.user.id)
@@ -81,12 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const profilePromise = supabase.from("users").select("*").eq("id", userId).single()
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile load timeout")), 5000),
-      )
-
-      const { data: profile, error } = (await Promise.race([profilePromise, timeoutPromise])) as any
+      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
