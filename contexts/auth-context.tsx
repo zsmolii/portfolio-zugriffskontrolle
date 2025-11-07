@@ -40,9 +40,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         console.log("[v0] Checking session...")
 
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Session check timeout")), 10000),
+        )
+
         const {
           data: { session },
-        } = await supabase.auth.getSession()
+        } = (await Promise.race([sessionPromise, timeoutPromise])) as any
 
         console.log("[v0] Session:", session ? "exists" : "none")
 
@@ -54,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error("[v0] Error checking session:", error)
-        setError("Fehler beim Laden der Session")
+        setError(null)
         setUser(null)
         setIsLoading(false)
       }
@@ -83,7 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log("[v0] Loading user profile for:", userId)
 
-      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).single()
+      const profilePromise = supabase.from("users").select("*").eq("id", userId).single()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Profile load timeout")), 8000),
+      )
+
+      const { data: profile, error } = (await Promise.race([profilePromise, timeoutPromise])) as any
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
@@ -92,6 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setError("Benutzerprofil nicht gefunden.")
         } else if (error.code === "42P17") {
           setError("RLS-Policy-Fehler: Infinite recursion.")
+        } else if (error.message?.includes("timeout")) {
+          console.error("[v0] Profile load timeout - continuing anyway")
+          setError("Timeout beim Laden des Profils")
         } else {
           setError(`Fehler beim Laden des Profils: ${error.message}`)
         }
@@ -114,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false)
     } catch (error) {
       console.error("[v0] Unexpected error loading user profile:", error)
-      setError("Unerwarteter Fehler beim Laden des Profils")
+      setError(null)
       setUser(null)
       setIsLoading(false)
     }
