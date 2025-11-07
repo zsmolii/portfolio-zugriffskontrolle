@@ -108,8 +108,12 @@ export default function ContentManagementPage() {
         })
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Error saving content:", error)
+        throw error
+      }
 
+      console.log("[v0] Content saved successfully:", data)
       setMessage("Inhalte erfolgreich gespeichert!")
       setTimeout(() => setMessage(""), 3000)
     } catch (error) {
@@ -150,25 +154,37 @@ export default function ContentManagementPage() {
     setMessage("")
 
     try {
-      await supabase.from("projects").delete().gt("id", "0")
-
-      const { data, error } = await supabase.from("projects").insert(
-        projects.map((p, index) => ({
-          ...p,
-          id: p.id.startsWith("temp-") ? undefined : p.id,
-          order_index: index,
-        })),
-      )
-
-      if (error) throw error
-
-      // Refresh projects
-      const { data: projectsData } = await supabase
+      const { error: deleteError } = await supabase
         .from("projects")
-        .select("*")
-        .order("order_index", { ascending: true })
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000")
 
-      setProjects(projectsData || [])
+      if (deleteError) {
+        console.error("[v0] Error deleting projects:", deleteError)
+        throw deleteError
+      }
+
+      const projectsToInsert = projects.map((p, index) => ({
+        title: p.title,
+        description: p.description,
+        technologies: p.technologies,
+        challenges: p.challenges,
+        ai_role: p.ai_role,
+        demo_url: p.demo_url,
+        icon: p.icon,
+        order_index: index,
+      }))
+
+      const { data, error } = await supabase.from("projects").insert(projectsToInsert).select()
+
+      if (error) {
+        console.error("[v0] Error inserting projects:", error)
+        throw error
+      }
+
+      console.log("[v0] Projects saved successfully:", data)
+
+      setProjects(data || [])
       setMessage("Projekte erfolgreich gespeichert!")
       setTimeout(() => setMessage(""), 3000)
     } catch (error) {
