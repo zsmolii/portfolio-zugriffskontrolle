@@ -143,6 +143,31 @@ export default function AdminDashboardPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="border-border/50">
               <CardHeader>
+                <CardTitle>Portfolio Vorschau</CardTitle>
+                <CardDescription>Sehen Sie Ihr Portfolio, wie es andere sehen</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Aktive Firmen</span>
+                  <span className="text-sm font-medium">{stats.activeCompanies}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Portfolio-Zugriffe</span>
+                  <span className="text-sm font-medium">{stats.totalCompanies}</span>
+                </div>
+                <div className="pt-2 space-y-2">
+                  <Button className="w-full" variant="default" asChild>
+                    <Link href="/portfolio">Portfolio ansehen</Link>
+                  </Button>
+                  <Button className="w-full bg-transparent" variant="outline" asChild>
+                    <Link href="/admin/content">Inhalte bearbeiten</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardHeader>
                 <CardTitle>Schnellzugriff</CardTitle>
                 <CardDescription>Häufig verwendete Verwaltungsaufgaben</CardDescription>
               </CardHeader>
@@ -169,7 +194,9 @@ export default function AdminDashboardPage() {
                 </Link>
               </CardContent>
             </Card>
+          </div>
 
+          <div className="grid md:grid-cols-2 gap-6">
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>Systemstatus</CardTitle>
