@@ -37,20 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkSession = async () => {
-      const timeoutId = setTimeout(() => {
-        console.error("[v0] Session check timeout")
-        setError("Verbindung zur Datenbank konnte nicht hergestellt werden.")
-        setUser(null)
-        setIsLoading(false)
-      }, 15000) // 15 seconds timeout
-
       try {
         console.log("[v0] Checking session...")
         const {
           data: { session },
         } = await supabase.auth.getSession()
-
-        clearTimeout(timeoutId)
 
         if (session?.user) {
           console.log("[v0] Session found, loading profile...")
@@ -61,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false)
         }
       } catch (error) {
-        clearTimeout(timeoutId)
         console.error("[v0] Error checking session:", error)
         setError(null)
         setUser(null)
@@ -89,18 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loadUserProfile = async (userId: string) => {
-    const timeoutId = setTimeout(() => {
-      console.error("[v0] Profile load timeout")
-      setError("Benutzerprofil konnte nicht geladen werden. Bitte versuchen Sie es erneut.")
-      setUser(null)
-      setIsLoading(false)
-    }, 12000) // 12 seconds timeout
-
     try {
       console.log("[v0] Loading user profile for:", userId)
       const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).maybeSingle()
-
-      clearTimeout(timeoutId)
 
       if (error) {
         console.error("[v0] Error loading user profile:", error)
@@ -123,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(profile)
       setIsLoading(false)
     } catch (error) {
-      clearTimeout(timeoutId)
       console.error("[v0] Unexpected error loading user profile:", error)
       setError(null)
       setUser(null)
