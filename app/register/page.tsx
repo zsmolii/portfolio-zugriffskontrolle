@@ -124,14 +124,12 @@ export default function RegisterPage() {
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 30)
 
-      const { error: profileError } = await supabase.from("users").insert({
-        id: authData.user.id,
-        company_name: companyName,
-        contact_person: contactPerson,
-        email: email,
-        is_active: true,
-        is_admin: false,
-        access_expires_at: expiresAt.toISOString(),
+      const { error: profileError } = await supabase.rpc("create_user_profile", {
+        user_id: authData.user.id,
+        user_email: email,
+        user_company_name: companyName,
+        user_contact_person: contactPerson,
+        user_access_expires_at: expiresAt.toISOString(),
       })
 
       if (profileError) {
