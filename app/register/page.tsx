@@ -113,8 +113,8 @@ export default function RegisterPage() {
         return
       }
 
-      if (!authData.user) {
-        setError("Konto konnte nicht erstellt werden")
+      if (authData.user && !authData.session) {
+        alert("Bitte bestätigen Sie Ihre E-Mail-Adresse. Sie haben eine E-Mail mit einem Bestätigungslink erhalten.")
         setIsLoading(false)
         return
       }
