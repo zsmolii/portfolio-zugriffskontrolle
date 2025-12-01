@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
 
 export interface User {
   id: string
@@ -33,92 +32,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const supabase = createBrowserClient()
-
   useEffect(() => {
     const checkSession = async () => {
       try {
         console.log("[v0] Checking session...")
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        const response = await fetch("/api/auth/me")
 
-        if (session?.user) {
-          console.log("[v0] Session found, loading profile...")
-          await loadUserProfile(session.user.id)
-        } else {
+        if (!response.ok) {
           console.log("[v0] No session found")
           setUser(null)
           setIsLoading(false)
+          return
         }
+
+        const data = await response.json()
+        console.log("[v0] User profile loaded:", data.user)
+        setUser(data.user)
+        setIsLoading(false)
       } catch (error) {
         console.error("[v0] Error checking session:", error)
-        setError(null)
         setUser(null)
         setIsLoading(false)
       }
     }
 
     checkSession()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("[v0] Auth state changed:", event)
-      if (session?.user) {
-        await loadUserProfile(session.user.id)
-      } else {
-        setUser(null)
-        setIsLoading(false)
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [])
 
-  const loadUserProfile = async (userId: string) => {
-    try {
-      console.log("[v0] Loading user profile for:", userId)
-      const { data: profile, error } = await supabase.from("users").select("*").eq("id", userId).maybeSingle()
-
-      if (error) {
-        console.error("[v0] Error loading user profile:", error)
-        setError(`Fehler beim Laden des Profils: ${error.message}`)
-        setUser(null)
-        setIsLoading(false)
-        return
-      }
-
-      if (!profile) {
-        console.error("[v0] Profile not found")
-        setError("Benutzerprofil nicht gefunden.")
-        setUser(null)
-        setIsLoading(false)
-        return
-      }
-
-      console.log("[v0] User profile loaded successfully")
-      setError(null)
-      setUser(profile)
-      setIsLoading(false)
-    } catch (error) {
-      console.error("[v0] Unexpected error loading user profile:", error)
-      setError(null)
-      setUser(null)
-      setIsLoading(false)
-    }
-  }
-
   const login = async (userId: string) => {
-    await loadUserProfile(userId)
+    // Nach Login wird die Seite neu geladen, daher kein manuelles Laden nötig
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setError(null)
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      setUser(null)
+      setError(null)
+      window.location.href = "/login"
+    } catch (error) {
+      console.error("[v0] Logout error:", error)
+    }
   }
 
   const isAdmin = user?.is_admin || false
