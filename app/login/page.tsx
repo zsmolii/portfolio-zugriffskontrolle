@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -24,27 +25,63 @@ export default function LoginPage() {
     console.log("[v0 LOGIN] Starting login for:", email)
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const supabase = createClient()
+
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        console.log("[v0 LOGIN] Login error:", data.error)
-        setError(data.error || "Anmeldung fehlgeschlagen")
+      if (signInError) {
+        console.error("[v0 LOGIN] SignIn error:", signInError)
+        setError(
+          signInError.message === "Invalid login credentials"
+            ? "E-Mail oder Passwort ist falsch"
+            : signInError.message,
+        )
         setIsLoading(false)
         return
       }
 
-      console.log("[v0 LOGIN] Login successful!", data.user)
+      if (!authData.user) {
+        setError("Anmeldung fehlgeschlagen")
+        setIsLoading(false)
+        return
+      }
 
-      const redirectUrl = data.user.is_admin ? "/admin" : "/portfolio"
+      console.log("[v0 LOGIN] Auth successful, fetching profile for:", authData.user.id)
+
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("is_admin, is_active")
+        .eq("id", authData.user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error("[v0 LOGIN] Profile fetch error:", profileError)
+        setError(`Profil konnte nicht geladen werden: ${profileError.message}`)
+        setIsLoading(false)
+        return
+      }
+
+      if (!profile) {
+        setError("Kein Nutzerprofil gefunden. Bitte Admin kontaktieren.")
+        setIsLoading(false)
+        return
+      }
+
+      if (profile.is_active === false) {
+        setError("Dieses Konto ist deaktiviert.")
+        await supabase.auth.signOut()
+        setIsLoading(false)
+        return
+      }
+
+      const redirectUrl = profile.is_admin ? "/admin" : "/portfolio"
       console.log("[v0 LOGIN] Redirecting to:", redirectUrl)
 
-      window.location.href = redirectUrl
+      router.push(redirectUrl)
+      router.refresh()
     } catch (err) {
       console.error("[v0 LOGIN] Unexpected error:", err)
       setError("Unerwarteter Fehler beim Anmelden")
