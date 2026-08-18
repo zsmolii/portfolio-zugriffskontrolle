@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 export interface User {
   id: string
@@ -33,21 +34,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const supabase = createClient()
+
     const checkSession = async () => {
       try {
         console.log("[v0] Checking session...")
-        const response = await fetch("/api/auth/me")
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
 
-        if (!response.ok) {
+        if (!authUser) {
           console.log("[v0] No session found")
           setUser(null)
           setIsLoading(false)
           return
         }
 
-        const data = await response.json()
-        console.log("[v0] User profile loaded:", data.user)
-        setUser(data.user)
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", authUser.id)
+          .maybeSingle()
+
+        if (profileError || !profile) {
+          console.log("[v0] No profile found", profileError)
+          setUser(null)
+          setIsLoading(false)
+          return
+        }
+
+        console.log("[v0] User profile loaded:", profile)
+        setUser(profile as User)
         setIsLoading(false)
       } catch (error) {
         console.error("[v0] Error checking session:", error)
@@ -57,6 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     checkSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      checkSession()
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const login = async (userId: string) => {
@@ -65,7 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" })
+      const supabase = createClient()
+      await supabase.auth.signOut()
       setUser(null)
       setError(null)
       window.location.href = "/login"
