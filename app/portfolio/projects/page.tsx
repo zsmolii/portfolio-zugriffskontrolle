@@ -1,11 +1,45 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/contexts/auth-context"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
+
+interface ProjectItem {
+  title: string
+  icon: string
+  description: string
+  tech: string
+  challenge: string | null
+  aiRole: string
+  link: string | null
+  linkLabel: string
+}
+
+interface ProjectsContent {
+  items: ProjectItem[]
+}
 
 export default function PortfolioProjectsPage() {
   const { isAdmin } = useAuth()
+  const [content, setContent] = useState<ProjectsContent | null>(null)
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("portfolio_content")
+        .select("content")
+        .eq("section", "projects")
+        .maybeSingle()
+
+      if (!error && data) {
+        setContent(data.content as ProjectsContent)
+      }
+    }
+    loadContent()
+  }, [])
 
   return (
     <ProtectedRoute>
@@ -43,87 +77,55 @@ export default function PortfolioProjectsPage() {
           <section id="projects" className="section">
             <div className="container">
               <h2>Komplexe Projekte, Reale Lösungen</h2>
-              <p style={{ marginBottom: "2rem" }}>
+              <p style={{ textAlign: "center", marginBottom: "3rem" }}>
                 Hier finden Sie einen Einblick in reale Anwendungen, die von Grund auf entwickelt wurden.
               </p>
 
+              {!content && <p>Wird geladen...</p>}
+
               <div className="project-grid">
-                <article className="card project-card">
-                  <h3>
-                    <i className="fas fa-warehouse"></i> Materiallager-System mit Lieferscheinverwaltung
-                  </h3>
-                  <p>
-                    Ein webbasiertes System zur Verwaltung von Materialbeständen. Lieferscheine werden gescannt,
-                    Aufträge automatisch zugeordnet und Materialbewegungen dokumentiert.
-                  </p>
+                {content?.items.map((project) => (
+                  <article className="card project-card" key={project.title}>
+                    <h3>
+                      <i className={`fas ${project.icon}`}></i> {project.title}
+                    </h3>
+                    <p>{project.description}</p>
 
-                  <ul className="project-detail-list">
-                    <li>
-                      <strong>
-                        <i className="fas fa-code"></i> Technologien
-                      </strong>
-                      HTML, CSS, JavaScript, Node.js, OCR-API, KI-Unterstützung bei Codegenerierung
-                    </li>
-                    <li>
-                      <strong>
-                        <i className="fas fa-exclamation-triangle"></i> Herausforderungen & Lösungen
-                      </strong>
-                      Das OCR-Parsing war unzuverlässig – mithilfe eines **KI-basierten Regex-Analyzers** konnte ich die
-                      Texterkennung stabilisieren und die Genauigkeit auf 98% erhöhen.
-                    </li>
-                    <li>
-                      <strong>
-                        <i className="fas fa-brain"></i> Rolle der KI
-                      </strong>
-                      Ich nutzte KI für Code-Vorschläge, Refactoring und API-Dokumentation, aber alle
-                      **Architekturentscheidungen traf ich selbst** und führte umfassende manuelle Reviews durch.
-                    </li>
-                    <li>
-                      <a href="https://github.com/IhrProjektRepo" target="_blank" rel="noreferrer">
-                        <i className="fab fa-github"></i> ➡️ View Code / Demo
-                      </a>
-                    </li>
-                  </ul>
-                </article>
-
-                <article className="card project-card">
-                  <h3>
-                    <i className="fas fa-chart-line"></i> Echtzeit-Datenvisualisierungs-Tool
-                  </h3>
-                  <p>
-                    Ein Python-basiertes Backend zur Verarbeitung von Sensordaten und eine React-Oberfläche zur
-                    Visualisierung von Zeitreihen-Metriken.
-                  </p>
-                  <ul className="project-detail-list">
-                    <li>
-                      <strong>
-                        <i className="fas fa-code"></i> Technologien
-                      </strong>
-                      Python (FastAPI), Pandas, React, Chart.js, Docker
-                    </li>
-                    <li>
-                      <strong>
-                        <i className="fas fa-exclamation-triangle"></i> Herausforderungen & Lösungen
-                      </strong>
-                      Hohe Latenz bei der Datenbankabfrage – gelöst durch Implementierung eines Redis-Caches und
-                      Optimierung der SQL-Queries.
-                    </li>
-                    <li>
-                      <strong>
-                        <i className="fas fa-brain"></i> Rolle der KI
-                      </strong>
-                      KI unterstützte bei der Erstellung von Dockerfiles und der Fehlersuche in der
-                      Python-Datenpipeline.
-                    </li>
-                    <li>
-                      <a href="#" target="_blank" rel="noreferrer">
-                        <i className="fab fa-github"></i> ➡️ View Code / Demo
-                      </a>
-                    </li>
-                  </ul>
-                </article>
-
-                {/* Additional project cards can be added here */}
+                    <ul className="project-detail-list">
+                      <li>
+                        <strong>
+                          <i className="fas fa-code"></i> Technologien
+                        </strong>
+                        {project.tech}
+                      </li>
+                      {project.challenge && (
+                        <li>
+                          <strong>
+                            <i className="fas fa-exclamation-triangle"></i> Herausforderungen & Lösungen
+                          </strong>
+                          {project.challenge}
+                        </li>
+                      )}
+                      <li>
+                        <strong>
+                          <i className="fas fa-brain"></i> Rolle der KI
+                        </strong>
+                        {project.aiRole}
+                      </li>
+                      <li>
+                        {project.link ? (
+                          <a href={project.link} target="_blank" rel="noreferrer">
+                            <i className="fab fa-github"></i> {project.linkLabel}
+                          </a>
+                        ) : (
+                          <span>
+                            <i className="fas fa-lock"></i> {project.linkLabel}
+                          </span>
+                        )}
+                      </li>
+                    </ul>
+                  </article>
+                ))}
               </div>
             </div>
           </section>
