@@ -14,8 +14,6 @@ export default function RegisterPage() {
   const [companyName, setCompanyName] = useState("")
   const [contactPerson, setContactPerson] = useState("")
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [inviteValid, setInviteValid] = useState(false)
@@ -81,16 +79,6 @@ export default function RegisterPage() {
       return
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwörter stimmen nicht überein")
-      return
-    }
-
-    if (password.length < 8) {
-      setError("Passwort muss mindestens 8 Zeichen lang sein")
-      return
-    }
-
     setIsLoading(true)
 
     try {
@@ -98,12 +86,13 @@ export default function RegisterPage() {
 
       console.log("[v0] Starting registration...")
 
+      // Der Besucher braucht kein Passwort – wird intern automatisch erzeugt,
+      // da nur der einmalige Einladungslink als Zugangsschutz dient.
+      const generatedPassword = crypto.randomUUID() + crypto.randomUUID()
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/portfolio`,
-        },
+        password: generatedPassword,
       })
 
       if (signUpError) {
@@ -113,8 +102,16 @@ export default function RegisterPage() {
         return
       }
 
-      if (authData.user && !authData.session) {
-        alert("Bitte bestätigen Sie Ihre E-Mail-Adresse. Sie haben eine E-Mail mit einem Bestätigungslink erhalten.")
+      if (!authData.user) {
+        setError("Registrierung fehlgeschlagen")
+        setIsLoading(false)
+        return
+      }
+
+      if (!authData.session) {
+        setError(
+          "E-Mail-Bestätigung ist noch aktiv. Bitte in Supabase unter Authentication → Providers → Email die Option 'Confirm email' deaktivieren.",
+        )
         setIsLoading(false)
         return
       }
@@ -134,13 +131,7 @@ export default function RegisterPage() {
 
       if (profileError) {
         console.error("[v0] Profile error:", profileError)
-        console.error("[v0] Profile error details:", {
-          code: profileError.code,
-          message: profileError.message,
-          details: profileError.details,
-          hint: profileError.hint,
-        })
-        setError(`Benutzerprofil konnte nicht erstellt werden: ${profileError.message} (Code: ${profileError.code})`)
+        setError(`Benutzerprofil konnte nicht erstellt werden: ${profileError.message}`)
         setIsLoading(false)
         return
       }
@@ -194,12 +185,12 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md border-border/50 shadow-2xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Registrierung</CardTitle>
-          <CardDescription>Erstellen Sie Ihr Konto für 30 Tage Zugriff auf das Portfolio</CardDescription>
+          <CardDescription>Zugang für 30 Tage – kein Passwort nötig, der Link ist Ihr Zugang</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Firmenname</Label>
+              <Label htmlFor="companyName">Firma</Label>
               <Input
                 id="companyName"
                 type="text"
@@ -231,43 +222,14 @@ export default function RegisterPage() {
                 placeholder="ihre.email@firma.de"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Mindestens 8 Zeichen"
-                minLength={8}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                placeholder="Passwort wiederholen"
-              />
-            </div>
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Konto wird erstellt..." : "Registrieren"}
+              {isLoading ? "Zugang wird erstellt..." : "Zugang anfordern"}
             </Button>
-            <p className="text-sm text-center text-muted-foreground">
-              Bereits ein Konto?{" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
-                Hier anmelden
-              </Link>
-            </p>
           </form>
         </CardContent>
       </Card>
