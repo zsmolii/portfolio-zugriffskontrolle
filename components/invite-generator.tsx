@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Copy, Check, Plus } from "lucide-react"
+import { Copy, Check, Plus, Trash2 } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
 
 interface InviteToken {
@@ -103,6 +103,19 @@ export function InviteGenerator() {
     setTimeout(() => setCopiedToken(null), 2000)
   }
 
+  const handleDeleteInvite = async (id: string) => {
+    if (!confirm("Diesen Einladungslink wirklich löschen?")) return
+
+    try {
+      const { error } = await supabase.from("invites").delete().eq("id", id)
+      if (error) throw error
+      setInvites((prev) => prev.filter((i) => i.id !== id))
+    } catch (error) {
+      console.error("[v0] Error deleting invite:", error)
+      alert("Löschen fehlgeschlagen.")
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -158,6 +171,9 @@ export function InviteGenerator() {
                       disabled={isUsed}
                     >
                       {copiedToken === invite.token ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteInvite(invite.id)}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 )
