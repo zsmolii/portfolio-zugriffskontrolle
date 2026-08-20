@@ -95,49 +95,57 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-border/50 hover:border-primary/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Firmen Gesamt</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalCompanies}</div>
-                <p className="text-xs text-muted-foreground">{stats.activeCompanies} derzeit aktiv</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/companies">
+              <Card className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Nutzer</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalCompanies}</div>
+                  <p className="text-xs text-muted-foreground">{stats.activeCompanies} derzeit aktiv</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="border-border/50 hover:border-primary/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Offene Verlängerungen</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.pendingExtensions}</div>
-                <p className="text-xs text-muted-foreground">Warten auf Prüfung</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/extensions">
+              <Card className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Offene Verlängerungen</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.pendingExtensions}</div>
+                  <p className="text-xs text-muted-foreground">Warten auf Prüfung</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="border-border/50 hover:border-primary/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Einladungslinks</CardTitle>
-                <LinkIcon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalInvites}</div>
-                <p className="text-xs text-muted-foreground">{stats.usedInvites} verwendet</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/invites">
+              <Card className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Einladungslinks</CardTitle>
+                  <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalInvites}</div>
+                  <p className="text-xs text-muted-foreground">{stats.usedInvites} verwendet</p>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="border-border/50 hover:border-primary/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Letzte Aktivitäten</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.recentLogs}</div>
-                <p className="text-xs text-muted-foreground">Letzte 24 Stunden</p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/logs">
+              <Card className="border-border/50 hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Letzte Aktivitäten</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.recentLogs}</div>
+                  <p className="text-xs text-muted-foreground">Letzte 24 Stunden</p>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -148,7 +156,7 @@ export default function AdminDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Aktive Firmen</span>
+                  <span className="text-sm text-muted-foreground">Aktive Nutzer</span>
                   <span className="text-sm font-medium">{stats.activeCompanies}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -158,9 +166,6 @@ export default function AdminDashboardPage() {
                 <div className="pt-2 space-y-2">
                   <Button className="w-full" variant="default" asChild>
                     <Link href="/portfolio">Portfolio ansehen</Link>
-                  </Button>
-                  <Button className="w-full bg-transparent" variant="outline" asChild>
-                    <Link href="/admin/projects">Projekte verwalten</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -177,19 +182,9 @@ export default function AdminDashboardPage() {
                     Einladungslink erstellen
                   </Button>
                 </Link>
-                <Link href="/admin/companies">
+                <Link href="/admin/content">
                   <Button className="w-full bg-transparent" variant="outline">
-                    Firmen verwalten
-                  </Button>
-                </Link>
-                <Link href="/admin/extensions">
-                  <Button className="w-full bg-transparent" variant="outline">
-                    Verlängerungsanträge prüfen
-                  </Button>
-                </Link>
-                <Link href="/admin/projects">
-                  <Button className="w-full bg-transparent" variant="outline">
-                    Projekte verwalten
+                    Inhalte bearbeiten
                   </Button>
                 </Link>
               </CardContent>
