@@ -1,11 +1,46 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/contexts/auth-context"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
+
+interface SkillItem {
+  icon: string
+  label: string
+}
+
+interface SkillCategory {
+  title: string
+  icon: string
+  items: SkillItem[]
+}
+
+interface SkillsContent {
+  categories: SkillCategory[]
+  philosophy: string
+}
 
 export default function PortfolioSkillsPage() {
   const { isAdmin } = useAuth()
+  const [content, setContent] = useState<SkillsContent | null>(null)
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("portfolio_content")
+        .select("content")
+        .eq("section", "skills")
+        .maybeSingle()
+
+      if (!error && data) {
+        setContent(data.content as SkillsContent)
+      }
+    }
+    loadContent()
+  }, [])
 
   return (
     <ProtectedRoute>
@@ -44,118 +79,34 @@ export default function PortfolioSkillsPage() {
             <div className="container">
               <h2>Technologischer Stack & Expertise</h2>
 
-              <div className="skill-category">
-                <h3>
-                  <i className="fas fa-laptop-code"></i> Frontend-Entwicklung
-                </h3>
-                <div className="skills-grid">
-                  <div className="skill-item">
-                    <i className="fab fa-html5"></i>
-                    <p>HTML5</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fab fa-css3-alt"></i>
-                    <p>CSS3 / Flexbox / Grid</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fab fa-js"></i>
-                    <p>JavaScript (ES6+)</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fab fa-react"></i>
-                    <p>React</p>
+              {!content && <p>Wird geladen...</p>}
+
+              {content?.categories.map((category) => (
+                <div className="skill-category" key={category.title}>
+                  <h3>
+                    <i className={`fas ${category.icon}`}></i> {category.title}
+                  </h3>
+                  <div className="skills-grid">
+                    {category.items.map((item) => (
+                      <div className="skill-item" key={item.label}>
+                        <i className={`fas ${item.icon}`}></i>
+                        <p>{item.label}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              ))}
 
-              <div className="skill-category">
-                <h3>
-                  <i className="fas fa-server"></i> Backend & Data
-                </h3>
-                <div className="skills-grid">
-                  <div className="skill-item">
-                    <i className="fab fa-node-js"></i>
-                    <p>Node.js</p>
+              {content && (
+                <>
+                  <h3 style={{ marginTop: "2rem" }}>
+                    <i className="fas fa-graduation-cap"></i> Lernansatz & Philosophie
+                  </h3>
+                  <div className="card" style={{ borderLeft: "4px solid orange", padding: "1.5rem" }}>
+                    <p>{content.philosophy}</p>
                   </div>
-                  <div className="skill-item">
-                    <i className="fas fa-atom"></i>
-                    <p>Express.js</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fab fa-python"></i>
-                    <p>Python</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fas fa-database"></i>
-                    <p>SQL (PostgreSQL/MySQL)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="skill-category">
-                <h3>
-                  <i className="fas fa-tools"></i> Tools & Infrastruktur
-                </h3>
-                <div className="skills-grid">
-                  <div className="skill-item">
-                    <i className="fab fa-git-alt"></i>
-                    <p>Git / GitHub</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fas fa-terminal"></i>
-                    <p>VS Code</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fab fa-docker"></i>
-                    <p>Docker</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fas fa-plug"></i>
-                    <p>REST APIs / Postman</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="skill-category">
-                <h3>
-                  <i className="fas fa-robot"></i> KI-Werkzeuge & Philosophie
-                </h3>
-                <div className="skills-grid">
-                  <div className="skill-item">
-                    <i className="fas fa-comments"></i>
-                    <p>ChatGPT / GPT-4</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fas fa-hand-holding-box"></i>
-                    <p>GitHub Copilot</p>
-                  </div>
-                  <div className="skill-item">
-                    <i className="fas fa-lightbulb"></i>
-                    <p>Cursor / Andere KI-IDEs</p>
-                  </div>
-                </div>
-
-                <div className="card philosophy-card" style={{ marginTop: "2rem" }}>
-                  <p style={{ fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>
-                    Ich sehe KI nicht als Ersatz, sondern als Werkzeug, das sauberen, nachvollziehbaren Code
-                    beschleunigt.
-                  </p>
-                </div>
-              </div>
-
-              <h2 style={{ marginTop: "4rem" }}>
-                <i className="fas fa-graduation-cap"></i> Lernansatz & Philosophie
-              </h2>
-              <article className="card philosophy-card">
-                <p>
-                  Ich arbeite nach dem Prinzip **&quot;Verstehen vor Automatisieren&quot;**. Ich nutze KI-Tools gezielt,
-                  um Routinearbeit zu verkürzen – nicht um Verantwortung abzugeben.
-                </p>
-                <p style={{ marginTop: "0.8rem" }}>
-                  Mein Ziel ist es, Systeme zu entwickeln, die **nachvollziehbar, skalierbar und logisch konsistent**
-                  sind. Die Architektur bleibt dabei stets in meiner Hand.
-                </p>
-              </article>
+                </>
+              )}
             </div>
           </section>
         </main>
