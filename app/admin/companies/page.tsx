@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth, type User } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { CheckCircle, XCircle } from "lucide-react"
+import { CheckCircle, XCircle, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function CompaniesPage() {
@@ -67,6 +67,20 @@ export default function CompaniesPage() {
 
   const isExpired = (expiresAt: string) => {
     return new Date(expiresAt) < new Date()
+  }
+
+  const handleDelete = async (userId: string, name: string) => {
+    if (!confirm(`Account von "${name}" wirklich löschen? Der Zugriff wird sofort entzogen.`)) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from("users").delete().eq("id", userId)
+      if (error) throw error
+      setCompanies((prev) => prev.filter((c) => c.id !== userId))
+    } catch (error) {
+      console.error("Fehler beim Löschen:", error)
+      alert("Löschen fehlgeschlagen.")
+    }
   }
 
   if (!isAdmin) {
@@ -159,6 +173,14 @@ export default function CompaniesPage() {
                               Aktivieren
                             </>
                           )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(company.id, company.company_name)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Löschen
                         </Button>
                       </div>
                     </div>
