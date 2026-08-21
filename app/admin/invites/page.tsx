@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from "@/components/protected-route"
 import { InviteGenerator } from "@/components/invite-generator"
+import { PreviewLinkGenerator } from "@/components/preview-link-generator"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -36,11 +37,20 @@ export default function InvitesPage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold">Einladungsverwaltung</h1>
-              <p className="text-muted-foreground">Einladungslinks erstellen und verwalten</p>
+              <p className="text-muted-foreground">
+                Registrierungslinks (30 Tage Zugang) und einmalige Sofort-Ansicht-Links
+              </p>
             </div>
           </div>
 
           <InviteGenerator />
+          <PreviewLinkGenerator />
+
+          <Link href="/admin/access-requests">
+            <Button variant="outline" className="w-full bg-transparent">
+              Zugangsanfragen ansehen
+            </Button>
+          </Link>
         </div>
       </div>
     </ProtectedRoute>
