@@ -4,6 +4,9 @@ import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/contexts/auth-context"
 import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 interface SkillItem {
@@ -23,8 +26,14 @@ interface SkillsContent {
 }
 
 export default function PortfolioSkillsPage() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, logout } = useAuth()
+  const router = useRouter()
   const [content, setContent] = useState<SkillsContent | null>(null)
+
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+  }
 
   useEffect(() => {
     const loadContent = async () => {
@@ -72,6 +81,10 @@ export default function PortfolioSkillsPage() {
               )}
             </ul>
           </nav>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Abmelden
+          </Button>
         </header>
 
         <main>
