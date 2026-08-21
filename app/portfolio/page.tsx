@@ -1,14 +1,51 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/contexts/auth-context"
+import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { LogOut } from "lucide-react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Edit } from "lucide-react"
+
+interface AboutContent {
+  name: string
+  intro1: string
+  intro2: string
+  techStack: string[]
+  github: string
+  linkedin: string
+  email: string
+}
 
 export default function PortfolioPage() {
-  const { user, isAdmin } = useAuth()
-  const [isEditMode, setIsEditMode] = useState(false)
+  const { isAdmin, logout } = useAuth()
+  const router = useRouter()
+  const [content, setContent] = useState<AboutContent | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+  }
+
+  useEffect(() => {
+    const loadContent = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("portfolio_content")
+        .select("content")
+        .eq("section", "about")
+        .maybeSingle()
+
+      if (!error && data) {
+        setContent(data.content as AboutContent)
+      }
+      setLoading(false)
+    }
+    loadContent()
+  }, [])
 
   return (
     <ProtectedRoute>
@@ -40,59 +77,52 @@ export default function PortfolioPage() {
               )}
             </ul>
           </nav>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Abmelden
+          </Button>
         </header>
 
         <main>
           <section id="about" className="section">
             <div className="container about-content">
-              {isEditMode && isAdmin && (
-                <button className="edit-section-btn">
-                  <Edit className="icon" /> Abschnitt bearbeiten
-                </button>
+              {loading && <p>Wird geladen...</p>}
+              {!loading && !content && <p>Inhalt konnte nicht geladen werden.</p>}
+              {content && (
+                <>
+                  <h1>Hallo, ich bin {content.name}</h1>
+                  <p>{content.intro1}</p>
+                  <p>{content.intro2}</p>
+
+                  <div className="tech-stack">
+                    {content.techStack.map((tech) => (
+                      <span key={tech} className="badge">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="social-links">
+                    <a href={content.github} target="_blank" aria-label="GitHub Profil" rel="noreferrer">
+                      <i className="fab fa-github"></i>
+                    </a>
+                    <a href={content.linkedin} target="_blank" aria-label="LinkedIn Profil" rel="noreferrer">
+                      <i className="fab fa-linkedin"></i>
+                    </a>
+                    <a href={`mailto:${content.email}`} aria-label="E-Mail senden">
+                      <i className="fas fa-envelope"></i>
+                    </a>
+                  </div>
+
+                  <p style={{ marginTop: "1.5rem" }}>
+                    <Link href="/portfolio/contact">
+                      <i className="fas fa-file-pdf"></i> Lebenslauf & Kontakt
+                    </Link>
+                  </p>
+                </>
               )}
-              <h1>Hallo, ich bin [Ihr Name]</h1>
-              <p>
-                Ich bin ein autodidaktischer Entwickler mit Schwerpunkt auf **praxisorientierter Softwareentwicklung**.
-                Ich verstehe Architektur, Logik und Systemdesign – und nutze KI-Tools gezielt, um Entwicklungsprozesse
-                zu beschleunigen.
-              </p>
-              <p>
-                Mein Fokus liegt auf funktionalen, sauberen und nachvollziehbaren Lösungen – egal ob Web-Apps,
-                Datenverarbeitung oder Prozessautomatisierung.
-              </p>
-
-              <div className="tech-stack">
-                <span className="badge">Python</span>
-                <span className="badge">JavaScript</span>
-                <span className="badge">Node.js</span>
-                <span className="badge">React</span>
-                <span className="badge">SQL</span>
-                <span className="badge">Docker</span>
-                <span className="badge">Git</span>
-                <span className="badge">Copilot</span>
-              </div>
-
-              <div className="social-links">
-                <a href="https://github.com/IhrUsername" target="_blank" aria-label="GitHub Profil" rel="noreferrer">
-                  <i className="fab fa-github"></i>
-                </a>
-                <a
-                  href="https://linkedin.com/in/IhrUsername"
-                  target="_blank"
-                  aria-label="LinkedIn Profil"
-                  rel="noreferrer"
-                >
-                  <i className="fab fa-linkedin"></i>
-                </a>
-                <a href="mailto:ihre.adresse@email.com" aria-label="E-Mail senden">
-                  <i className="fas fa-envelope"></i>
-                </a>
-              </div>
             </div>
           </section>
-
-          {/* Remove projects and skills sections */}
-          {/* Remove contact section */}
         </main>
 
         <footer className="footer">
