@@ -182,11 +182,6 @@ export default function AdminDashboardPage() {
                     Einladungslink erstellen
                   </Button>
                 </Link>
-                <Link href="/admin/content">
-                  <Button className="w-full bg-transparent" variant="outline">
-                    Inhalte bearbeiten
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
           </div>
