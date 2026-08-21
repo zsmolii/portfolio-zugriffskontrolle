@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,10 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const [companyName, setCompanyName] = useState("")
   const [contactPerson, setContactPerson] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [inviteValid, setInviteValid] = useState(false)
@@ -79,20 +81,24 @@ export default function RegisterPage() {
       return
     }
 
+    if (password !== confirmPassword) {
+      setError("Passwörter stimmen nicht überein")
+      return
+    }
+
+    if (password.length < 8) {
+      setError("Passwort muss mindestens 8 Zeichen lang sein")
+      return
+    }
+
     setIsLoading(true)
 
     try {
       const supabase = createClient()
 
-      console.log("[v0] Starting registration...")
-
-      // Der Besucher braucht kein Passwort – wird intern automatisch erzeugt,
-      // da nur der einmalige Einladungslink als Zugangsschutz dient.
-      const generatedPassword = crypto.randomUUID() + crypto.randomUUID()
-
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
-        password: generatedPassword,
+        password,
       })
 
       if (signUpError) {
@@ -116,8 +122,6 @@ export default function RegisterPage() {
         return
       }
 
-      console.log("[v0] User created:", authData.user.id)
-
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 30)
 
@@ -136,8 +140,6 @@ export default function RegisterPage() {
         return
       }
 
-      console.log("[v0] Profile created successfully")
-
       const { error: updateError } = await supabase
         .from("invites")
         .update({
@@ -150,8 +152,6 @@ export default function RegisterPage() {
       if (updateError) {
         console.error("[v0] Error marking invite as used:", updateError)
       }
-
-      console.log("[v0] Registration complete, redirecting...")
 
       router.push("/portfolio")
       router.refresh()
@@ -185,7 +185,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md border-border/50 shadow-2xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Registrierung</CardTitle>
-          <CardDescription>Zugang für 30 Tage – kein Passwort nötig, der Link ist Ihr Zugang</CardDescription>
+          <CardDescription>Erstellen Sie Ihr Konto für 30 Tage Zugriff auf das Portfolio</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -222,17 +222,54 @@ export default function RegisterPage() {
                 placeholder="ihre.email@firma.de"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Passwort</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Mindestens 8 Zeichen"
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="Passwort wiederholen"
+              />
+            </div>
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
                 {error}
               </div>
             )}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Zugang wird erstellt..." : "Zugang anfordern"}
+              {isLoading ? "Konto wird erstellt..." : "Registrieren"}
             </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              Bereits ein Konto?{" "}
+              <Link href="/login" className="text-primary hover:underline font-medium">
+                Hier anmelden
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Wird geladen...</div>}>
+      <RegisterPageInner />
+    </Suspense>
   )
 }
