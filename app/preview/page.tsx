@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ interface PreviewContent {
   contact?: { email: string; github: string; linkedin: string }
 }
 
-export default function PreviewPage() {
+function PreviewPageInner() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const [content, setContent] = useState<PreviewContent | null>(null)
@@ -164,5 +164,13 @@ export default function PreviewPage() {
         <div className="container">&copy; 2025 Portfolio | Gebaut mit reinem Code.</div>
       </footer>
     </div>
+  )
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center" }}>Wird geladen...</div>}>
+      <PreviewPageInner />
+    </Suspense>
   )
 }
