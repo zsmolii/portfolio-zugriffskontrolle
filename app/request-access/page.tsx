@@ -97,5 +97,3 @@ export default function RequestAccessPage() {
     </div>
   )
 }
-ENDOFFILE
-echo done
