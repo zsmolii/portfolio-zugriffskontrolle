@@ -8,17 +8,12 @@ import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-
-interface ContactContent {
-  email: string
-  github: string
-  linkedin: string
-}
+import { ContactSection } from "@/components/portfolio-sections"
 
 export default function PortfolioContactPage() {
   const { isAdmin, logout } = useAuth()
   const router = useRouter()
-  const [content, setContent] = useState<ContactContent | null>(null)
+  const [content, setContent] = useState<any>(null)
   const [resumeUrl, setResumeUrl] = useState<string | null>(null)
 
   const handleLogout = () => {
@@ -36,18 +31,13 @@ export default function PortfolioContactPage() {
         .eq("section", "contact")
         .maybeSingle()
 
-      if (!error && data) {
-        setContent(data.content as ContactContent)
-      }
+      if (!error && data) setContent(data.content)
 
-      // Signierter, zeitlich begrenzter Link zum Lebenslauf – nur für eingeloggte Nutzer erzeugbar
       const { data: signedUrlData } = await supabase.storage
         .from("private-documents")
         .createSignedUrl("lebenslauf-dennis-smolinski.pdf", 3600)
 
-      if (signedUrlData) {
-        setResumeUrl(signedUrlData.signedUrl)
-      }
+      if (signedUrlData) setResumeUrl(signedUrlData.signedUrl)
     }
     loadContent()
   }, [])
@@ -89,68 +79,20 @@ export default function PortfolioContactPage() {
         </header>
 
         <main>
-          <section id="contact" className="section">
-            <div className="container">
-              <h2>
-                <i className="fas fa-handshake"></i> Kontakt & Vernetzung
-              </h2>
-              <p style={{ textAlign: "center", marginBottom: "3rem" }}>
-                Bereit für das nächste komplexe Projekt? Melden Sie sich direkt.
-              </p>
-
-              {content && (
-                <div className="contact-grid">
-                  <div className="contact-form">
-                    <h3>Nachricht senden</h3>
-                    <form action={`mailto:${content.email}`} method="post" encType="text/plain">
-                      <div>
-                        <label htmlFor="name">Name:</label>
-                        <input type="text" id="name" name="Name" required />
-                      </div>
-                      <div>
-                        <label htmlFor="email">E-Mail:</label>
-                        <input type="email" id="email" name="E-Mail" required />
-                      </div>
-                      <div>
-                        <label htmlFor="message">Nachricht:</label>
-                        <textarea id="message" name="Nachricht" rows={5} required></textarea>
-                      </div>
-                      <button type="submit">Nachricht absenden</button>
-                    </form>
-                    <p style={{ fontSize: "0.9rem", marginTop: "1rem" }}>
-                      Oder direkt: <a href={`mailto:${content.email}`}>{content.email}</a>
-                    </p>
-                  </div>
-
-                  <div className="qr-code-section">
-                    <h3>Vernetzung</h3>
-                    <div style={{ display: "flex", gap: "1.5rem", marginTop: "1rem", fontSize: "2rem" }}>
-                      <a href={content.github} target="_blank" aria-label="GitHub" rel="noreferrer">
-                        <i className="fab fa-github"></i>
-                      </a>
-                      <a href={content.linkedin} target="_blank" aria-label="LinkedIn" rel="noreferrer">
-                        <i className="fab fa-linkedin"></i>
-                      </a>
-                      <a href={`mailto:${content.email}`} aria-label="E-Mail">
-                        <i className="fas fa-envelope"></i>
-                      </a>
-                    </div>
-                    <p style={{ marginTop: "1.5rem" }}>
-                      {resumeUrl ? (
-                        <a href={resumeUrl} target="_blank" rel="noreferrer">
-                          <i className="fas fa-file-pdf"></i> Lebenslauf herunterladen
-                        </a>
-                      ) : (
-                        <span style={{ opacity: 0.6 }}>
-                          <i className="fas fa-file-pdf"></i> Lebenslauf wird geladen...
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              )}
+          {!content && (
+            <div className="container" style={{ padding: "3rem", textAlign: "center" }}>
+              Wird geladen...
             </div>
-          </section>
+          )}
+          {content && (
+            <ContactSection
+              email={content.email}
+              github={content.github}
+              linkedin={content.linkedin}
+              resumeUrl={resumeUrl}
+              showForm
+            />
+          )}
         </main>
 
         <footer className="footer">
