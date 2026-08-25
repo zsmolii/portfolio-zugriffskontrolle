@@ -8,27 +8,12 @@ import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-
-interface SkillItem {
-  icon: string
-  label: string
-}
-
-interface SkillCategory {
-  title: string
-  icon: string
-  items: SkillItem[]
-}
-
-interface SkillsContent {
-  categories: SkillCategory[]
-  philosophy: string
-}
+import { SkillsSection } from "@/components/portfolio-sections"
 
 export default function PortfolioSkillsPage() {
   const { isAdmin, logout } = useAuth()
   const router = useRouter()
-  const [content, setContent] = useState<SkillsContent | null>(null)
+  const [content, setContent] = useState<any>(null)
 
   const handleLogout = () => {
     logout()
@@ -44,9 +29,7 @@ export default function PortfolioSkillsPage() {
         .eq("section", "skills")
         .maybeSingle()
 
-      if (!error && data) {
-        setContent(data.content as SkillsContent)
-      }
+      if (!error && data) setContent(data.content)
     }
     loadContent()
   }, [])
@@ -88,40 +71,12 @@ export default function PortfolioSkillsPage() {
         </header>
 
         <main>
-          <section id="skills" className="section">
-            <div className="container">
-              <h2>Technologischer Stack & Expertise</h2>
-
-              {!content && <p>Wird geladen...</p>}
-
-              {content?.categories.map((category) => (
-                <div className="skill-category" key={category.title}>
-                  <h3>
-                    <i className={`fas ${category.icon}`}></i> {category.title}
-                  </h3>
-                  <div className="skills-grid">
-                    {category.items.map((item) => (
-                      <div className="skill-item" key={item.label}>
-                        <i className={`fas ${item.icon}`}></i>
-                        <p>{item.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {content && (
-                <>
-                  <h3 style={{ marginTop: "2rem" }}>
-                    <i className="fas fa-graduation-cap"></i> Lernansatz & Philosophie
-                  </h3>
-                  <div className="card" style={{ borderLeft: "4px solid orange", padding: "1.5rem" }}>
-                    <p>{content.philosophy}</p>
-                  </div>
-                </>
-              )}
+          {!content && (
+            <div className="container" style={{ padding: "3rem", textAlign: "center" }}>
+              Wird geladen...
             </div>
-          </section>
+          )}
+          {content && <SkillsSection categories={content.categories} philosophy={content.philosophy} />}
         </main>
 
         <footer className="footer">
